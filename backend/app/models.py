@@ -23,3 +23,20 @@ class Account(models.Model):
 	balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 	status = models.CharField(max_length=20, choices=Status.choices, default=Status.ATIVO)
 	created_at = models.DateTimeField(auto_now_add=True)
+
+class Transaction(models.Model):
+	class Type(models.TextChoices):
+		DEPÓSITO = 'depósito', 'Depósito'
+		ENVIO = 'envio', 'Envio'
+		RECEBIMENTO = 'recebimento', 'Recebimento'
+		ESTORNO = 'estorno', 'Estorno'
+
+	account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions')
+	origin_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='sent_transfers')
+	destination_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='received_transfers')
+	value = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+	balance_after = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+	type = models.CharField(max_length=20, choices=Type.choices)
+	description = models.CharField(max_length=254, blank=True)
+	created_at = models.DateTimeField(auto_now_add=True)
+	related_transaction = models.ForeignKey('Transaction', on_delete=models.CASCADE, null=True, blank=True)
