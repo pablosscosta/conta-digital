@@ -20,7 +20,6 @@ class Account(models.Model):
 	    BLOQUEADO = 'bloqueado', 'Bloqueado'
 
 	user = models.OneToOneField(User, on_delete=models.PROTECT)
-	account_number = models.IntegerField(unique=True)
 	balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 	status = models.CharField(max_length=20, choices=Status.choices, default=Status.ATIVO)
 	created_at = models.DateTimeField(auto_now_add=True)
