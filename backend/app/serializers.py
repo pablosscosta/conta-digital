@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import User, Account
 from django.db import transaction
-import random
 
 class UserSerializer(serializers.ModelSerializer):
 	class Meta:
@@ -36,12 +35,15 @@ class UserSerializer(serializers.ModelSerializer):
 			password = validated_data.pop('password')
 			user = User(**validated_data)
 			user.set_password(password)
+			role = validated_data.get('role')
 			user.save()
 
-			Account.objects.create(
-				user = user,
-				balance = 0.00,
-				status = 'ativo'
-			)
+			if user.role == User.Role.USER:
+
+				Account.objects.create(
+					user = user,
+					balance = 0.00,
+					status = 'ativo'
+				)
 
 			return user
