@@ -3,6 +3,8 @@ from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
+	username = None
+
 	class Role(models.TextChoices):
 	    ADMIN = 'admin', 'Administrador'
 	    USER = 'user', 'Usuário'
@@ -11,6 +13,9 @@ class User(AbstractUser):
 	full_name = models.CharField(max_length=60)
 	cpf = models.CharField(max_length=11)
 	role = models.CharField(max_length=20, choices=Role.choices)
+
+	USERNAME_FIELD = 'email'
+	REQUIRED_FIELDS = []
 
 
 class Account(models.Model):
