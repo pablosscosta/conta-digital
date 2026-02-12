@@ -29,21 +29,4 @@ class UserSerializer(serializers.ModelSerializer):
 		return value
 
 	def create(self, validated_data):
-
-		with transaction.atomic():
-
-			password = validated_data.pop('password')
-			user = User(**validated_data)
-			user.set_password(password)
-			role = validated_data.get('role')
-			user.save()
-
-			if user.role == User.Role.USER:
-
-				Account.objects.create(
-					user = user,
-					balance = 0.00,
-					status = 'ativo'
-				)
-
-			return user
+		return User.objects.create_user(**validated_data)
