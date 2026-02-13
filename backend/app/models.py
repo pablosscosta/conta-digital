@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db.models import Q
 
 
 class CustomUserManager(BaseUserManager):
@@ -49,6 +50,14 @@ class Account(models.Model):
 	balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 	status = models.CharField(max_length=20, choices=Status.choices, default=Status.ATIVO)
 	created_at = models.DateTimeField(auto_now_add=True)
+
+	class Meta:
+		constraints = [
+			models.CheckConstraint(
+				condition=models.Q(balance__gte=0),
+				name='balance_non_negative'
+			)
+		]
 
 
 class Transaction(models.Model):
