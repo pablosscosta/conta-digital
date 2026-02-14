@@ -6,9 +6,7 @@ class UserSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = User
 		fields = ['id', 'full_name', 'cpf', 'email', 'password', 'role']
-
 		read_only_fields = ['id']
-
 		extra_kwargs = {
 			'password': {'write_only': True}
 		}
@@ -30,3 +28,18 @@ class UserSerializer(serializers.ModelSerializer):
 
 	def create(self, validated_data):
 		return User.objects.create_user(**validated_data)
+
+
+class AccountSerializer(serializers.ModelSerializer):
+	user = UserSerializer(read_only=True)
+
+	class Meta:
+		model = Account
+		fields = [
+			'id',
+			'user',
+			'balance',
+			'status',
+			'created_at'
+		]
+		read_only_fields = ['id', 'balance', 'created_at']
