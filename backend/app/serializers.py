@@ -6,9 +6,7 @@ class UserSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = User
 		fields = ['id', 'full_name', 'cpf', 'email', 'password', 'role']
-
 		read_only_fields = ['id']
-
 		extra_kwargs = {
 			'password': {'write_only': True}
 		}
@@ -29,21 +27,19 @@ class UserSerializer(serializers.ModelSerializer):
 		return value
 
 	def create(self, validated_data):
+		return User.objects.create_user(**validated_data)
 
-		with transaction.atomic():
 
-			password = validated_data.pop('password')
-			user = User(**validated_data)
-			user.set_password(password)
-			role = validated_data.get('role')
-			user.save()
+class AccountSerializer(serializers.ModelSerializer):
+	user = UserSerializer(read_only=True)
 
-			if user.role == User.Role.USER:
-
-				Account.objects.create(
-					user = user,
-					balance = 0.00,
-					status = 'ativo'
-				)
-
-			return user
+	class Meta:
+		model = Account
+		fields = [
+			'id',
+			'user',
+			'balance',
+			'status',
+			'created_at'
+		]
+		read_only_fields = ['id', 'balance', 'created_at']
