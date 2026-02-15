@@ -4,8 +4,9 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsAdminRole
 from rest_framework.exceptions import PermissionDenied
-from .serializers import UserSerializer, AccountSerializer
+from .serializers import UserSerializer, AccountSerializer, DepositSerializer
 from .models import Account
+from .services import DepositService
 
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -50,3 +51,32 @@ class AdminUsersAPIView(APIView):
         accounts = Account.objects.filter(user__role='user')
         serializer = AccountSerializer(accounts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class DepositView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        serializer = DepositSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        account = request.user.account
+        value = serializer.validated_data["value"]
+
+        transaction = DepositService.execute_deposit(
+            account=account,
+            value=value
+        )
+
+        return Response(
+            {
+                "id": transaction.id,
+                "value": transaction.value,
+                "balance_after": transaction.balance_after,
+                "type": transaction.type,
+                "description": transaction.description,
+                "created_at": transaction.created_at,
+            },
+            status=status.HTTP_201_CREATED
+        )

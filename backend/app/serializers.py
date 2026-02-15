@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import User, Account
 from django.db import transaction
+from decimal import Decimal
 
 class UserSerializer(serializers.ModelSerializer):
 	class Meta:
@@ -43,3 +44,12 @@ class AccountSerializer(serializers.ModelSerializer):
 			'created_at'
 		]
 		read_only_fields = ['id', 'balance', 'created_at']
+
+
+class DepositSerializer(serializers.Serializer):
+
+    value = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=True
+    )
