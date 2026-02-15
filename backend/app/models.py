@@ -68,8 +68,8 @@ class Transaction(models.Model):
 		ESTORNO = 'estorno', 'Estorno'
 
 	account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='transactions')
-	origin_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='sent_transfers')
-	destination_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='received_transfers')
+	origin_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='sent_transfers', null=True, blank=True)
+	destination_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='received_transfers', null=True, blank=True)
 	value = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 	balance_after = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 	type = models.CharField(max_length=20, choices=Type.choices)

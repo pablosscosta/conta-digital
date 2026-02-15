@@ -1,12 +1,13 @@
 from django.db import transaction
-from django.core.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError
 from .models import Account, Transaction
+from decimal import Decimal
 
 class TransferService:
     @staticmethod
-    def execute_transfer(origin_account: Account, destination_account: Account, value: float, description: str):
+    def execute_transfer(origin_account: Account, destination_account: Account, value: Decimal, description: str):
 
-        if value <= 0:
+        if value <= Decimal("0.00"):
             raise ValidationError("O valor da transferência deve ser positivo.")
         
         if not origin_account.is_active or not destination_account.is_active:
@@ -31,7 +32,7 @@ class TransferService:
             origin.save()
             destination.save()
 
-            tx_envio = Transaction.objects.create(
+            transfer_sent = Transaction.objects.create(
                 account=origin,                     
                 origin_account=origin,               
                 destination_account=destination,      
@@ -42,7 +43,7 @@ class TransferService:
                 related_transaction=None
             )
 
-            tx_recebimento = Transaction.objects.create(
+            transfer_received = Transaction.objects.create(
                 account=destination,                
                 origin_account=origin,               
                 destination_account=destination,     
@@ -53,4 +54,35 @@ class TransferService:
                 related_transaction=None    
             )
 
-            return tx_envio, tx_recebimento
+            return transfer_sent, transfer_received
+
+
+
+class DepositService:
+
+    @staticmethod
+    def execute_deposit(account: Account, value: Decimal):
+
+        if value < Decimal("1.00"):
+            raise ValidationError("O valor mínimo para depósito é R$ 1,00.")
+
+        if value > Decimal("10000.00"):
+            raise ValidationError("O valor máximo por depósito é R$ 10.000,00.")
+
+        with transaction.atomic():
+
+            account.balance += value
+            account.save()
+
+            transfer_deposit = Transaction.objects.create(
+                account=account,
+                origin_account=None,
+                destination_account=None,
+                value=value,
+                balance_after=account.balance,
+                type=Transaction.Type.DEPÓSITO,
+                description='',
+                related_transaction=None
+            )
+
+        return transfer_deposit
