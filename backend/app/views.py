@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsAdminRole
 from rest_framework.exceptions import PermissionDenied
-from .serializers import UserSerializer, AccountSerializer, DepositSerializer, TransferSerializer
-from .models import Account
+from .serializers import UserSerializer, AccountSerializer, DepositSerializer, TransferSerializer, TransactionStatementSerializer
+from .models import Account, Transaction
 from .services import DepositService, TransferService
 from rest_framework.exceptions import ValidationError
 
@@ -125,3 +125,61 @@ class TransferView(APIView):
             status=status.HTTP_201_CREATED
         )
 
+
+class StatementView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        account = user.account
+
+        transactions = Transaction.objects.filter(account=account).order_by('created_at')
+        date_start = request.query_params.get('date_start')
+        date_end = request.query_params.get('date_end')
+        transaction_type = request.query_params.get('type')
+
+        if date_start:
+            transactions = transactions.filter(created_at__date__gte=date_start)
+
+        if date_end:
+            transactions = transactions.filter(created_at__date__gte=date_end)
+
+        if transaction_type:
+            transactions = transactions.filter(type=transaction_type)
+
+        serializer = TransactionStatementSerializer(transactions, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminStatementView(APIView):
+    permission_classes = [IsAdminRole]
+
+    def get(self, request, id):
+
+        account = Account.objects.filter(user__id=id).first()
+
+        if not account:
+            raise ValidationError("Usuário não encontrado.")
+
+        transactions = Transaction.objects.filter(
+            account=account
+        ).order_by("-created_at")
+
+        # mesmos filtros
+        date_start = request.query_params.get("date_start")
+        date_end = request.query_params.get("date_end")
+        transaction_type = request.query_params.get("type")
+
+        if date_start:
+            transactions = transactions.filter(created_at__date__gte=date_start)
+
+        if date_end:
+            transactions = transactions.filter(created_at__date__lte=date_end)
+
+        if transaction_type:
+            transactions = transactions.filter(type=transaction_type)
+
+        serializer = TransactionStatementSerializer(transactions, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
