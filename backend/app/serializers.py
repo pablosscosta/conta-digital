@@ -22,11 +22,6 @@ class UserSerializer(serializers.ModelSerializer):
 			raise serializers.ValidationError('CPF já cadastrado')
 		return value
 
-	def validate_role(self, value):
-		if value not in ['admin', 'user']:
-			raise serializers.ValidationError('Perfil inválido')
-		return value
-
 	def create(self, validated_data):
 		return User.objects.create_user(**validated_data)
 
