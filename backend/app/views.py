@@ -4,9 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .permissions import IsAdminRole
 from rest_framework.exceptions import PermissionDenied
-from .serializers import UserSerializer, AccountSerializer, DepositSerializer
+from .serializers import UserSerializer, AccountSerializer, DepositSerializer, TransferSerializer
 from .models import Account
-from .services import DepositService
+from .services import DepositService, TransferService
+from rest_framework.exceptions import ValidationError
 
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -80,3 +81,47 @@ class DepositView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+
+class TransferView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        serializer = TransferSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        origin_account = user.account
+
+        identifier = serializer.validated_data["identifier"]
+        value = serializer.validated_data["value"]
+        description = serializer.validated_data.get("description", "")
+
+        destination_account = Account.objects.filter(
+            user__email=identifier
+        ).first()
+
+        if not destination_account:
+            destination_account = Account.objects.filter(
+                user__cpf=identifier
+            ).first()
+
+        if not destination_account:
+            raise ValidationError("Destinatário não encontrado.")
+
+
+        transfer_sent, _ = TransferService.execute_transfer(
+            origin_account=origin_account,
+            destination_account=destination_account,
+            value=value,
+            description=description
+        )
+
+        return Response(
+            {
+                "message": "Transferência realizada com sucesso.",
+                "transfer_id": transfer_sent.id
+            },
+            status=status.HTTP_201_CREATED
+        )
+
