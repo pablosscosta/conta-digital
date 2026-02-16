@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserRegistrationView, BalanceAPIView, AdminUsersAPIView, DepositView, TransferView, StatementView, AdminStatementView
+from .views import UserRegistrationView, BalanceAPIView, AdminUsersAPIView, DepositView, TransferView, StatementView, AdminStatementView, ReverseTransferView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
@@ -16,6 +16,7 @@ urlpatterns = [
     # Operações Financeiras
     path('account/deposit/', DepositView.as_view(), name='deposit'),
     path('account/transfer/', TransferView.as_view(), name='transfer'),
+    path('admin/reverse/<int:id>', ReverseTransferView.as_view(), name='reverse'),
 
     # Extrato
     path('account/statement/', StatementView.as_view(), name='my_statement'),

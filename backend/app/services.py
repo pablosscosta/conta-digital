@@ -51,7 +51,7 @@ class TransferService:
                 balance_after=destination.balance,   
                 type=Transaction.Type.RECEBIMENTO,   
                 description=description,
-                related_transaction=None    
+                related_transaction=transfer_sent    
             )
 
             return transfer_sent, transfer_received
@@ -86,3 +86,64 @@ class DepositService:
             )
 
         return transfer_deposit
+
+
+class ReverseService:
+
+    @staticmethod
+    @transaction.atomic
+    def execute_reverse(transaction_id):
+
+           original_transaction = Transaction.objects.select_related(
+               "account"
+           ).get(id=transaction_id)
+
+           if original_transaction.type != Transaction.Type.ENVIO:
+               raise ValidationError("Apenas transferências do tipo 'Envio' podem ser estornadas.")
+
+           if Transaction.objects.filter(
+               related_transaction=original_transaction,
+               type=Transaction.Type.ESTORNO
+           ).exists():
+               raise ValidationError("Transferência já estornada.")
+
+           sender_account = original_transaction.account
+
+           received_transaction = Transaction.objects.get(
+               related_transaction=original_transaction,
+               type=Transaction.Type.RECEBIMENTO
+           )
+
+           receiver_account = received_transaction.account
+
+           value = original_transaction.value
+
+           if receiver_account.balance < value:
+               raise ValidationError("Destinatário não possui saldo para estorno.")
+
+           receiver_account.balance -= value
+           sender_account.balance += value
+
+           receiver_account.save()
+           sender_account.save()
+
+
+           reverse_sender = Transaction.objects.create(
+               account=sender_account,
+               type=Transaction.Type.ESTORNO,
+               value=value,
+               description="Estorno de transferência enviado",
+               balance_after=sender_account.balance,
+               related_transaction=original_transaction
+           )
+
+           reverse_receiver = Transaction.objects.create(
+               account=receiver_account,
+               type=Transaction.Type.ESTORNO,
+               value=value,
+               description="Estorno de transferência recebido",
+               balance_after=receiver_account.balance,
+               related_transaction=original_transaction
+           )
+
+           return reverse_sender, reverse_receiver
