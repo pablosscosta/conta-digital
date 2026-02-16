@@ -153,7 +153,7 @@ class StatementView(APIView):
 
 
 class AdminStatementView(APIView):
-    permission_classes = [IsAdminRole]
+    permission_classes = [IsAuthenticated, IsAdminRole]
 
     def get(self, request, id):
 
