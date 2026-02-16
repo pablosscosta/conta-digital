@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Account
+from .models import User, Account, Transaction
 from django.db import transaction
 from decimal import Decimal
 
@@ -60,3 +60,17 @@ class TransferSerializer(serializers.Serializer):
 		if value <= Decimal("0.00"):
 			raise serializers.ValidationError("O valor deve ser maior que zero")
 		return value
+
+
+class TransactionStatementSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Transaction
+		fields = [
+			'id',
+			'type',
+			'value',
+			'description',
+			'created_at',
+			'balance_after',
+		]
+
