@@ -6,7 +6,7 @@ from .permissions import IsAdminRole
 from rest_framework.exceptions import PermissionDenied
 from .serializers import UserSerializer, AccountSerializer, DepositSerializer, TransferSerializer, TransactionStatementSerializer
 from .models import Account, Transaction
-from .services import DepositService, TransferService
+from .services import DepositService, TransferService, ReverseService
 from rest_framework.exceptions import ValidationError
 
 class UserRegistrationView(APIView):
@@ -165,8 +165,6 @@ class AdminStatementView(APIView):
         transactions = Transaction.objects.filter(
             account=account
         ).order_by("-created_at")
-
-        # mesmos filtros
         date_start = request.query_params.get("date_start")
         date_end = request.query_params.get("date_end")
         transaction_type = request.query_params.get("type")
@@ -183,3 +181,22 @@ class AdminStatementView(APIView):
         serializer = TransactionStatementSerializer(transactions, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ReverseTransferView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminRole]
+
+    def post(self, request, id):
+
+        try:
+            reverse_sender, reverse_receiver = ReverseService.execute_reverse(id)
+        except Transaction.DoesNotExist:
+            raise ValidationError("Transação não encontrada.")
+
+        return Response(
+            {
+                "message": "Transferência estornada com sucesso.",
+                "reverse_transaction_id": reverse_sender.id
+            },
+            status=status.HTTP_201_CREATED
+        )
