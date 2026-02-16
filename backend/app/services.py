@@ -10,7 +10,7 @@ class TransferService:
         if value <= Decimal("0.00"):
             raise ValidationError("O valor da transferência deve ser positivo.")
         
-        if not origin_account.is_active or not destination_account.is_active:
+        if not origin_account.status or not destination_account.status:
             raise ValidationError("Ambas as contas precisam estar ativas.")
 
         if origin_account.id == destination_account.id:

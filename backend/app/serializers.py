@@ -48,8 +48,15 @@ class AccountSerializer(serializers.ModelSerializer):
 
 class DepositSerializer(serializers.Serializer):
 
-    value = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        required=True
-    )
+    value = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
+
+
+class TransferSerializer(serializers.Serializer):
+	identifier = serializers.CharField(max_length = 255)
+	value = serializers.DecimalField(max_digits=12, decimal_places=2)
+	description = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+	def validate_value(self, value):
+		if value <= Decimal("0.00"):
+			raise serializers.ValidationError("O valor deve ser maior que zero")
+		return value
