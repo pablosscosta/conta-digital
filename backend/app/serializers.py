@@ -58,6 +58,9 @@ class TransferSerializer(serializers.Serializer):
 
 
 class TransactionStatementSerializer(serializers.ModelSerializer):
+	origin_name = serializers.CharField(source='origin_account.user.full_name', read_only=True)
+	destination_name = serializers.CharField(source='destination_account.user.full_name', read_only=True)
+
 	class Meta:
 		model = Transaction
 		fields = [
@@ -67,5 +70,7 @@ class TransactionStatementSerializer(serializers.ModelSerializer):
 			'description',
 			'created_at',
 			'balance_after',
+			'origin_name',
+			'destination_name'
 		]
 
