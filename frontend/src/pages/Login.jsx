@@ -22,8 +22,7 @@ function Login() {
       const { access, refresh } = response.data;
       localStorage.setItem("access", access);
       localStorage.setItem("refresh", refresh);
-      alert("Login realizado com sucesso! Token: " + access.substring(0, 20) + "...");
-      console.log("Tokens recebidos:", response.data);
+      navigate("/dashboard");
     } catch (err) {
       setError("Credenciais inválidas. Tente novamente.");
     } finally {
