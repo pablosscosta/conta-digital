@@ -14,6 +14,19 @@ export const useDashboard = () => {
   const [transferData, setTransferData] = useState({ identifier: "", value: "", description: "" });
   const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
   const [filters, setFilters] = useState({ startDate: "", endDate: "", type: "" });
+  const [allUsers, setAllUsers] = useState([]);
+  const [isUserListModalOpen, setIsUserListModalOpen] = useState(false);
+  const [selectedUserAccount, setSelectedUserAccount] = useState(null);
+  const [adminTargetStatement, setAdminTargetStatement] = useState([]);
+
+  const fetchAdminData = async () => {
+    try {
+      const response = await api.get("/admin/users/");
+      setAllUsers(response.data);
+    } catch (error) {
+      console.error("Erro ao carregar lista de usuários:", error);
+    }
+  };
 
   const filteredTransactions = transactions
     .slice(0)
@@ -51,7 +64,10 @@ export const useDashboard = () => {
       return;
     }
     fetchData();
-  }, [navigate]);
+    if (user?.role === 'admin') {
+      fetchAdminData();
+    }
+  }, [navigate, user?.role]);
 
   const handleDeposit = async (e) => {
     e.preventDefault();
@@ -106,10 +122,75 @@ export const useDashboard = () => {
     }
   };
 
+  const fetchUserStatement = async (account) => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/admin/users/${account.user.id}/statement`);
+      setAdminTargetStatement(response.data);
+      setSelectedUserAccount(account);
+    } catch (error) {
+      alert("Erro ao carregar extrato do usuário.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReverse = async (transactionId) => {
+    if (!window.confirm("Deseja realmente estornar esta transação? O saldo das contas será ajustado imediatamente.")) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post(`/admin/reverse/${transactionId}`);
+      
+      alert("Estorno realizado com sucesso!");
+      
+      if (selectedUserAccount) {
+        fetchUserStatement(selectedUserAccount);
+      }
+      
+      fetchAdminData();
+      
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Erro ao realizar estorno.";
+      alert(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return {
-    balance, transactions, loading, user, isModalOpen, setIsModalOpen,
-    depositValue, setDepositValue, isTransferModalOpen, setIsTransferModalOpen,
-    transferData, setTransferData, isStatementModalOpen, setIsStatementModalOpen,
-    filters, setFilters, filteredTransactions, handleDeposit, handleTransfer, getBadgeStyle, navigate
+    balance,
+    transactions,
+    loading,
+    user,
+    isModalOpen,
+    setIsModalOpen,
+    depositValue,
+    setDepositValue,
+    isTransferModalOpen,
+    setIsTransferModalOpen,
+    transferData,
+    setTransferData,
+    isStatementModalOpen,
+    setIsStatementModalOpen,
+    filters,
+    setFilters,
+    filteredTransactions,
+    handleDeposit,
+    handleTransfer,
+    getBadgeStyle,
+    navigate,
+    allUsers,
+    fetchAdminData,
+    isUserListModalOpen,
+    setIsUserListModalOpen,
+    selectedUserAccount,
+    setSelectedUserAccount,
+    adminTargetStatement,
+    fetchUserStatement,
+    handleReverse
   };
 };
