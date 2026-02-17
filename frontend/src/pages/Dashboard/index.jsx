@@ -4,10 +4,36 @@ import { styles } from "./DashboardStyles";
 
 function Dashboard() {
   const {
-    balance, transactions, loading, user, isModalOpen, setIsModalOpen,
-    depositValue, setDepositValue, isTransferModalOpen, setIsTransferModalOpen,
-    transferData, setTransferData, isStatementModalOpen, setIsStatementModalOpen,
-    filters, setFilters, filteredTransactions, handleDeposit, handleTransfer, getBadgeStyle, navigate
+    balance,
+    transactions,
+    loading,
+    user,
+    isModalOpen,
+    setIsModalOpen,
+    depositValue,
+    setDepositValue,
+    isTransferModalOpen,
+    setIsTransferModalOpen,
+    transferData,
+    setTransferData,
+    isStatementModalOpen,
+    setIsStatementModalOpen,
+    filters,
+    setFilters,
+    filteredTransactions,
+    handleDeposit,
+    handleTransfer,
+    getBadgeStyle,
+    navigate,
+    allUsers,
+    fetchAdminData,
+    isUserListModalOpen,
+    setIsUserListModalOpen,
+    selectedUserAccount,
+    setSelectedUserAccount,
+    adminTargetStatement,
+    fetchUserStatement,
+    handleReverse
   } = useDashboard();
 
   if (loading) {
@@ -26,9 +52,29 @@ function Dashboard() {
       </nav>
 
       <div style={styles.content}>
+
+        {user?.role === 'admin' && (
+          <div style={styles.adminSection}>
+            <div style={styles.adminInfo}>
+              <span style={styles.adminBadge}>Modo Administrador</span>
+            </div>
+            <button 
+              style={styles.adminBtn} 
+              onClick={() => setIsUserListModalOpen(true)}
+            >
+              Ver Lista de Usuários
+            </button>
+          </div>
+        )}
+
         <header style={styles.header}>
           <h1 style={styles.title}>Olá, {user?.full_name}!</h1>
-          <p style={styles.subtitle}>Gerencie seu saldo e acompanhe seu extrato</p>
+          <p style={styles.subtitle}>
+            {user?.role === 'admin' 
+              ? "Painel de Gestão: Monitore usuários e realize estornos de transações." 
+              : "Gerencie seu saldo e acompanhe seu extrato pessoal."}
+          </p>
+
         </header>
 
         <div style={styles.balanceCard}>
@@ -180,6 +226,114 @@ function Dashboard() {
           </div>
         </div>
       )}
+
+      {isUserListModalOpen && (
+        <div style={styles.modalOverlay} onClick={() => {
+          setIsUserListModalOpen(false);
+          setSelectedUserAccount(null); 
+        }}>
+          <div style={styles.modalContentWide} onClick={(e) => e.stopPropagation()}>
+            
+            <div style={styles.modalHeader}>
+              <h2 style={styles.modalTitle}>
+                {selectedUserAccount 
+                  ? `Extrato: ${selectedUserAccount.user.full_name}` 
+                  : "Gestão de Usuários"}
+              </h2>
+              
+              {selectedUserAccount ? (
+                <button 
+                  style={styles.adminActionBtn} 
+                  onClick={() => setSelectedUserAccount(null)}
+                >
+                  ← Voltar para Lista
+                </button>
+              ) : (
+                <button 
+                  style={styles.closeModalBtn} 
+                  onClick={() => setIsUserListModalOpen(false)}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div style={styles.scrollArea}>
+              {!selectedUserAccount ? (
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Nome</th>
+                      <th style={styles.th}>E-mail</th>
+                      <th style={styles.th}>Saldo</th>
+                      <th style={styles.th}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allUsers.map((item) => (
+                      <tr key={item.id} style={styles.tableRow}>
+                        <td style={styles.td}><strong>{item.user.full_name}</strong></td>
+                        <td style={styles.td}>{item.user.email}</td>
+                        <td style={{...styles.td, fontWeight: 'bold', color: '#2563eb'}}>
+                          R$ {Number(item.balance).toFixed(2)}
+                        </td>
+                        <td style={styles.td}>
+                          <button 
+                            style={styles.adminActionBtn}
+                            onClick={() => fetchUserStatement(item)}
+                          >
+                            Ver Extrato
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Data</th>
+                      <th style={styles.th}>Tipo</th>
+                      <th style={styles.th}>Valor</th>
+                      <th style={styles.th}>Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminTargetStatement.slice(0).reverse().map((t) => (
+                      <tr key={t.id} style={styles.tableRow}>
+                        <td style={styles.td}>{new Date(t.created_at).toLocaleString('pt-BR')}</td>
+                        <td style={styles.td}>
+                          <span style={{...styles.badge, ...getBadgeStyle(t.type)}}>{t.type}</span>
+                        </td>
+                        <td style={{
+                          ...styles.tdValue, 
+                          color: (t.type === 'depósito' || t.type === 'recebimento') ? '#10b981' : '#ef4444'
+                        }}>
+                          R$ {Number(t.value).toFixed(2)}
+                        </td>
+                        <td style={styles.td}>
+                          {t.type === 'envio' && (
+                            <button 
+                              style={styles.adminActionBtn} 
+                              onClick={() => handleReverse(t.id)}
+                              disabled={loading}
+                            >
+                              {loading ? "..." : "Estornar"}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }
