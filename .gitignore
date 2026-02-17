@@ -1,6 +1,23 @@
+# (Backend)
 **/venv/
 **/env/
 **/.venv/
 **/__pycache__/
 **/*.py[cod]
 backend/db.sqlite3
+
+
+# Logs (Frontend)
+frontend/logs
+frontend/*.log
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/lerna-debug.log*
+
+# Dependências e Build (Frontend)
+frontend/node_modules
+frontend/dist
+frontend/dist-ssr
+frontend/*.local
