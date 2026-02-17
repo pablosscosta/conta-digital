@@ -4,7 +4,7 @@ from .models import User, Account
 
 @receiver(post_save, sender=User)
 def create_user_account(sender, instance, created, **kwargs):
-    if created and instance.role == User.Role.USER:
+    if created:
         Account.objects.create(
             user=instance,
             balance=0.00,
