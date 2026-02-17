@@ -10,6 +10,8 @@ function Dashboard() {
   const [user, setUser] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [depositValue, setDepositValue] = useState("");
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [transferData, setTransferData] = useState({identifier: "", value: "", description: ""});
 
 
   useEffect(() => {
@@ -61,6 +63,32 @@ function Dashboard() {
     }
   };
 
+  const handleTransfer = async (e) => {
+    e.preventDefault();
+
+    if (Number(transferData.value) > Number(balance)) {
+      alert("Saldo insuficiente para realizar esta transferência.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await api.post("/account/transfer/", transferData);
+      
+      alert("Transferência realizada com sucesso!");
+      setIsTransferModalOpen(false);
+      setTransferData({ identifier: "", value: "", description: "" });
+      
+      fetchData();
+    } catch (err) {
+      const errorMsg = err.response?.data?.non_field_errors || "Erro na transferência.";
+      alert(Array.isArray(errorMsg) ? errorMsg[0] : errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   if (loading) {
     return (
       <div style={styles.containerCenter}>
@@ -98,6 +126,9 @@ function Dashboard() {
           <div style={styles.actionsContainer}>
             <button style={styles.depositBtn} onClick={() => setIsModalOpen(true)}>
               + Novo Depósito
+            </button>
+            <button style={styles.depositBtn} onClick={() => setIsTransferModalOpen(true)}>
+              + Transferir
             </button>
           </div>
         </div>
@@ -185,6 +216,74 @@ function Dashboard() {
                   </button>
                   <button type="submit" style={styles.confirmBtn} disabled={loading}>
                     {loading ? "Processando..." : "Confirmar Depósito"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+        
+        {isTransferModalOpen && (
+          <div style={styles.modalOverlay} onClick={() => setIsTransferModalOpen(false)}>
+            <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <h3 style={styles.modalTitle}>Transferir Dinheiro</h3>
+              <p style={styles.modalSubtitle}>Envie valores para outros usuários via CPF ou E-mail.</p>
+              
+              <form onSubmit={handleTransfer}>
+                <div style={styles.formGap}>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Identificador do Destinatário</label>
+                    <input
+                      style={styles.input}
+                      type="text"
+                      placeholder="E-mail ou CPF (apenas números)"
+                      value={transferData.identifier}
+                      onChange={(e) => setTransferData({...transferData, identifier: e.target.value})}
+                      required
+                    />
+                  </div>
+
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Valor (R$)</label>
+                    <input
+                      style={styles.input}
+                      type="number"
+                      step="0.01"
+                      min="1.00"
+                      placeholder="0,00"
+                      value={transferData.value}
+                      onChange={(e) => setTransferData({...transferData, value: e.target.value})}
+                      required
+                    />
+                    {Number(transferData.value) > Number(balance) && (
+                      <small style={{ color: "#ef4444", marginTop: "4px", fontWeight: "600" }}>
+                        Saldo insuficiente (Disponível: R$ {Number(balance).toFixed(2)})
+                      </small>
+                    )}
+                  </div>
+
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Descrição (Opcional)</label>
+                    <input
+                      style={styles.input}
+                      type="text"
+                      placeholder="Ex: Aluguel, Jantar..."
+                      value={transferData.description}
+                      onChange={(e) => setTransferData({...transferData, description: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div style={styles.modalActions}>
+                  <button type="button" style={styles.cancelBtn} onClick={() => setIsTransferModalOpen(false)}>
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit" 
+                    style={styles.confirmBtn} 
+                    disabled={loading || Number(transferData.value) > Number(balance) || !transferData.value}
+                  >
+                    {loading ? "Enviando..." : "Confirmar Envio"}
                   </button>
                 </div>
               </form>
