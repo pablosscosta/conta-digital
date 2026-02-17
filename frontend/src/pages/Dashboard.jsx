@@ -77,14 +77,26 @@ function Dashboard() {
             <p style={styles.emptyMsg}>Nenhuma movimentação registrada.</p>
           ) : (
             <div style={styles.list}>
-              {transactions.map((t) => {
+              {transactions.slice(0).reverse().map((t) => {
                 const isPositive = t.type === 'depósito' || t.type === 'recebimento';
                 
+                const renderDescription = () => {
+                  if (t.description) return t.description;
+
+                  if (t.type === 'envio' && t.destination_name) {
+                    return `Para ${t.destination_name}`;
+                  }
+                  if (t.type === 'recebimento' && t.origin_name) {
+                    return `De ${t.origin_name}`;
+                  }
+                  return "Movimentação de conta";
+                };
+
                 return (
                   <div key={t.id} style={styles.listItem}>
                     <div style={styles.itemInfo}>
                       <span style={styles.itemType}>{t.type}</span>
-                      <span style={styles.itemDesc}>{t.description || "Transferência Digital"}</span>
+                      <span style={styles.itemDesc}>{renderDescription()}</span>
                       <span style={styles.itemDate}>
                         {new Date(t.created_at).toLocaleString('pt-BR')}
                       </span>
