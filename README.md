@@ -3,3 +3,5 @@
 
 # Tecnologias
 - Backend: Django
+- Frontend: React
+- Database: SQLite3 (Planejado: PostgreSQL)
