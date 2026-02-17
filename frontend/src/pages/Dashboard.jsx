@@ -12,6 +12,21 @@ function Dashboard() {
   const [depositValue, setDepositValue] = useState("");
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [transferData, setTransferData] = useState({identifier: "", value: "", description: ""});
+  const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
+  const [filters, setFilters] = useState({ startDate: "", endDate: "", type: ""});
+  const filteredTransactions = transactions
+    .slice(0)
+    .reverse() 
+    .filter((t) => {
+      const transactionDate = new Date(t.created_at).toISOString().split('T')[0];
+      
+      const matchStart = filters.startDate ? transactionDate >= filters.startDate : true;
+      const matchEnd = filters.endDate ? transactionDate <= filters.endDate : true;
+      const matchType = filters.type ? t.type === filters.type : true;
+      
+      return matchStart && matchEnd && matchType;
+    });
+
 
 
   useEffect(() => {
@@ -46,14 +61,12 @@ function Dashboard() {
     setLoading(true);
     
     try {
-      // Note que seu serializer espera um campo chamado 'value'
       await api.post("/account/deposit/", { value: depositValue });
       
       alert("Depósito realizado com sucesso!");
       setDepositValue("");
       setIsModalOpen(false);
       
-      // Atualiza os dados da dashboard (saldo e extrato) automaticamente
       fetchData(); 
     } catch (err) {
       const msg = err.response?.data?.value || "Erro ao realizar depósito.";
@@ -87,6 +100,22 @@ function Dashboard() {
       setLoading(false);
     }
   };
+
+  const getBadgeStyle = (type) => {
+    switch (type) {
+      case 'depósito':
+        return { backgroundColor: "#ecfdf5", color: "#059669", border: "1px solid #d1fae5" };
+      case 'recebimento':
+        return { backgroundColor: "#eff6ff", color: "#2563eb", border: "1px solid #dbeafe" };
+      case 'envio':
+        return { backgroundColor: "#fef2f2", color: "#dc2626", border: "1px solid #fee2e2" };
+      case 'estorno':
+        return { backgroundColor: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0" };
+      default:
+        return { backgroundColor: "#f3f4f6", color: "#1f2937" };
+    }
+  };
+
 
 
   if (loading) {
@@ -130,58 +159,47 @@ function Dashboard() {
             <button style={styles.depositBtn} onClick={() => setIsTransferModalOpen(true)}>
               + Transferir
             </button>
+            <button style={styles.depositBtn} onClick={() => setIsStatementModalOpen(true)}>
+              Ver Extrato
+            </button>
           </div>
         </div>
 
 
         <div style={styles.transactionsCard}>
-          <h3 style={styles.cardTitle}>Histórico de Transações</h3>
+          <div style={styles.cardHeaderWithAction}>
+            <h3 style={styles.cardTitle}>Resumo das últimas transações</h3>
+          </div>
 
           {transactions.length === 0 ? (
-            <p style={styles.emptyMsg}>Nenhuma movimentação registrada.</p>
+            <p style={styles.emptyMsg}>Nenhuma movimentação.</p>
           ) : (
             <div style={styles.list}>
-              {transactions.slice(0).reverse().map((t) => {
+              {transactions.slice(-5).reverse().map((t) => {
                 const isPositive = t.type === 'depósito' || t.type === 'recebimento';
                 
-                const renderDescription = () => {
-                  if (t.description) return t.description;
-
-                  if (t.type === 'envio' && t.destination_name) {
-                    return `Para ${t.destination_name}`;
-                  }
-                  if (t.type === 'recebimento' && t.origin_name) {
-                    return `De ${t.origin_name}`;
-                  }
-                  return "Movimentação de conta";
-                };
-
                 return (
                   <div key={t.id} style={styles.listItem}>
                     <div style={styles.itemInfo}>
                       <span style={styles.itemType}>{t.type}</span>
-                      <span style={styles.itemDesc}>{renderDescription()}</span>
                       <span style={styles.itemDate}>
-                        {new Date(t.created_at).toLocaleString('pt-BR')}
+                        {new Date(t.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                       </span>
                     </div>
-                    <div style={styles.itemValues}>
-                      <span style={{ 
-                        ...styles.itemAmount, 
-                        color: isPositive ? '#10b981' : '#ef4444' 
-                      }}>
-                        {isPositive ? '+' : '-'} R$ {Number(t.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                      <span style={styles.balanceAfter}>
-                        Saldo: R$ {Number(t.balance_after).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
+                    
+                    <span style={{ 
+                      ...styles.itemAmount, 
+                      color: isPositive ? '#10b981' : '#ef4444' 
+                    }}>
+                      {isPositive ? '+' : '-'} R$ {Number(t.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
+
         {isModalOpen && (
           <div style={styles.modalOverlay}>
             <div style={styles.modalContent}>
@@ -287,6 +305,108 @@ function Dashboard() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {isStatementModalOpen && (
+          <div style={styles.modalOverlay} onClick={() => setIsStatementModalOpen(false)}>
+            <div style={styles.modalContentWide} onClick={(e) => e.stopPropagation()}>
+              
+              <div style={styles.modalHeader}>
+                <h2 style={styles.modalTitle}>Extrato Completo</h2>
+                <button style={styles.closeModalBtn} onClick={() => setIsStatementModalOpen(false)}>✕</button>
+              </div>
+
+              <div style={styles.filterSection}>
+                <div style={styles.inputGroupSmall}>
+                  <label style={styles.labelSmall}>Data Início</label>
+                  <input 
+                    type="date" 
+                    style={styles.inputSmall} 
+                    value={filters.startDate}
+                    onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+                  />
+                </div>
+
+                <div style={styles.inputGroupSmall}>
+                  <label style={styles.labelSmall}>Data Fim</label>
+                  <input 
+                    type="date" 
+                    style={styles.inputSmall} 
+                    value={filters.endDate}
+                    onChange={(e) => setFilters({...filters, endDate: e.target.value})}
+                  />
+                </div>
+
+                <div style={styles.inputGroupSmall}>
+                  <label style={styles.labelSmall}>Tipo</label>
+                  <select 
+                    style={styles.inputSmall} 
+                    value={filters.type}
+                    onChange={(e) => setFilters({...filters, type: e.target.value})}
+                  >
+                    <option value="">Todos os tipos</option>
+                    <option value="depósito">Depósitos</option>
+                    <option value="envio">Envios</option>
+                    <option value="recebimento">Recebimentos</option>
+                    <option value="estorno">Estornos</option>
+                  </select>
+                </div>
+
+                <button 
+                  style={styles.clearFiltersBtn} 
+                  onClick={() => setFilters({ startDate: "", endDate: "", type: "" })}
+                >
+                  Limpar Filtros
+                </button>
+              </div>
+
+
+              <div style={styles.scrollArea}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr style={styles.tableHead}>
+                      <th style={styles.th}>Data/Hora</th>
+                      <th style={styles.th}>Tipo</th>
+                      <th style={styles.th}>Detalhes</th>
+                      <th style={styles.th}>Valor</th>
+                      <th style={styles.th}>Saldo Final</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTransactions.map((t) => {
+                      const isPositive = t.type === 'depósito' || t.type === 'recebimento';
+
+                      let detalhe = t.description || "-";
+                      if (t.type === 'envio' && t.destination_name) detalhe = `Para: ${t.destination_name}`;
+                      if (t.type === 'recebimento' && t.origin_name) detalhe = `De: ${t.origin_name}`;
+                      if (t.type === 'estorno') detalhe = t.description || "Estorno de transação";
+
+                      return (
+                        <tr key={t.id} style={styles.tableRow} className="animate-row">
+                          <td style={styles.td}>{new Date(t.created_at).toLocaleString('pt-BR')}</td>
+                          <td style={styles.td}>
+                            <span style={{ ...styles.badge, ...getBadgeStyle(t.type) }}>
+                              {t.type}
+                            </span>
+                          </td>
+                          <td style={styles.tdDesc}>{detalhe}</td>
+                          <td style={{ 
+                            ...styles.tdValue, 
+                            color: isPositive ? '#10b981' : '#ef4444' 
+                          }}>
+                            {isPositive ? '+' : '-'} R$ {Number(t.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td style={styles.tdSaldo}>
+                            R$ {Number(t.balance_after).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -500,6 +620,8 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
+    padding: "20px",
+    boxSizing: "border-box",
   },
   modalContent: {
     backgroundColor: "#fff",
@@ -549,6 +671,145 @@ const styles = {
     fontWeight: "600",
     cursor: "pointer",
   },
+  modalContentWide: {
+      backgroundColor: "#ffffff",
+      padding: "32px",
+      borderRadius: "20px",
+      width: "95%",
+      maxWidth: "1000px",
+      maxHeight: "85vh",
+      display: "flex",
+      flexDirection: "column",
+      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+      boxSizing: "border-box",
+    },
+    modalHeader: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: "24px",
+    },
+    closeModalBtn: {
+      background: "none",
+      border: "none",
+      fontSize: "20px",
+      color: "#64748b",
+      cursor: "pointer",
+      padding: "8px",
+    },
+    filterSection: {
+      display: "flex",
+      gap: "16px",
+      padding: "16px",
+      backgroundColor: "#f8fafc",
+      borderRadius: "12px",
+      marginBottom: "20px",
+      alignItems: "center",
+      flexWrap: "wrap",
+    },
+    scrollArea: {
+      overflowY: "auto",
+      flex: 1,
+      paddingRight: "8px",
+    },
+    table: {
+      width: "100%",
+      borderCollapse: "collapse",
+      textAlign: "left",
+    },
+    th: {
+      padding: "12px 16px",
+      fontSize: "13px",
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.5px",
+      borderBottom: "2px solid #f1f5f9",
+      fontWeight: "600",
+    },
+    td: {
+      padding: "16px",
+      fontSize: "14px",
+      color: "#1e293b",
+    },
+    tdType: {
+      padding: "16px",
+      fontSize: "12px",
+      fontWeight: "800",
+      textTransform: "uppercase",
+      color: "#475569",
+    },
+    tdDesc: {
+      padding: "16px",
+      fontSize: "14px",
+      color: "#64748b",
+      maxWidth: "250px",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+    },
+    tdValue: {
+      padding: "16px",
+      fontSize: "15px",
+      fontWeight: "700",
+      textAlign: "right",
+    },
+    tdSaldo: {
+      padding: "16px",
+      fontSize: "14px",
+      color: "#94a3b8",
+      textAlign: "right",
+      fontWeight: "500",
+    },
+    inputGroupSmall: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "4px",
+    },
+    labelSmall: {
+      fontSize: "11px",
+      fontWeight: "700",
+      color: "#94a3b8",
+      textTransform: "uppercase",
+    },
+    inputSmall: {
+      padding: "8px 12px",
+      borderRadius: "6px",
+      border: "1px solid #e2e8f0",
+      fontSize: "13px",
+      color: "#1e293b",
+      outline: "none",
+      backgroundColor: "#fff",
+    },
+    clearFiltersBtn: {
+      alignSelf: "flex-end",
+      padding: "10px 15px",
+      fontSize: "12px",
+      fontWeight: "600",
+      color: "#ef4444",
+      background: "none",
+      border: "1px solid #fee2e2",
+      borderRadius: "6px",
+      cursor: "pointer",
+      transition: "0.2s",
+    },
+    "@keyframes fadeIn": {
+      "0%": { opacity: 0, transform: "translateY(5px)" },
+      "100%": { opacity: 1, transform: "translateY(0)" }
+    },
+    tableRow: {
+      borderBottom: "1px solid #f1f5f9",
+      transition: "background-color 0.2s ease", 
+      animation: "fadeIn 0.3s ease-out forwards", 
+    },
+    badge: {
+      padding: "4px 10px",
+      borderRadius: "12px",
+      fontSize: "11px",
+      fontWeight: "700",
+      textTransform: "uppercase",
+      display: "inline-block",
+      whiteSpace: "nowrap",
+    },
 };
 
 
