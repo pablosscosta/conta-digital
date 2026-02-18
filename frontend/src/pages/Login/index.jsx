@@ -1,6 +1,7 @@
 import React from "react";
 import { useLogin } from "./useLogin";
 import { styles } from "./LoginStyles";
+import { Link } from 'react-router-dom';
 
 function Login() {
   const { 
@@ -52,6 +53,13 @@ function Login() {
             {loading ? "Processando..." : "Entrar na Conta"}
           </button>
         </form>
+        <div style={styles.footer}>
+          <span style={styles.footerText}>Não tem uma conta? </span>
+          <Link to="/register" style={styles.link}>
+            Registre-se aqui
+          </Link>
+        </div>
+
       </div>
     </div>
   );

@@ -1,6 +1,8 @@
 import React from "react";
 import { useRegister } from "./useRegister";
 import { styles } from "./RegisterStyles";
+import { Link } from 'react-router-dom';
+import { formatCPF } from "../../utils/utils"; 
 
 function Register() {
   const { 
@@ -8,7 +10,8 @@ function Register() {
     error, 
     loading, 
     handleChange, 
-    handleSubmit 
+    handleSubmit,
+    emailError 
   } = useRegister();
 
   return (
@@ -42,8 +45,9 @@ function Register() {
               type="text"
               name="cpf"
               placeholder="000.000.000-00"
-              value={formData.cpf}
+              value={formatCPF(formData.cpf)} 
               onChange={handleChange}
+              inputMode="numeric"
               required
             />
           </div>
@@ -51,7 +55,10 @@ function Register() {
           <div style={styles.inputGroup}>
             <label style={styles.label}>E-mail</label>
             <input
-              style={styles.input}
+              style={{
+                ...styles.input,
+                borderColor: emailError ? "#ef4444" : "#d1d5db" 
+              }}
               type="email"
               name="email"
               placeholder="seu@email.com"
@@ -59,6 +66,11 @@ function Register() {
               onChange={handleChange}
               required
             />
+            {emailError && (
+              <small style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>
+                {emailError}
+              </small>
+            )}
           </div>
 
           <div style={styles.inputGroup}>
@@ -95,6 +107,13 @@ function Register() {
             {loading ? "Cadastrando..." : "Finalizar Cadastro"}
           </button>
         </form>
+        <div style={styles.footer}>
+          <span style={styles.footerText}>Já tem uma conta? </span>
+          <Link to="/" style={styles.link}>
+            Faça login aqui
+          </Link>
+        </div>
+
       </div>
     </div>
   );

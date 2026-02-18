@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
+import { validateEmail } from "../../utils/utils"; 
 
 export const useRegister = () => {
   const navigate = useNavigate();
+  const [emailError, setEmailError] = useState("");
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -17,11 +19,25 @@ export const useRegister = () => {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+
+    const { name, value } = e.target;
+    if (name === "email") {
+      setFormData({ ...formData, email: value });
+      if (value && !validateEmail(value)) {
+        setEmailError("Formato de e-mail inválido.");
+      } else {
+        setEmailError("");
+      }
+    } 
+
+    if (name === "cpf") {
+      const rawValue = value.replace(/\D/g, "").slice(0, 11);
+      setFormData({ ...formData, cpf: rawValue });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,5 +65,6 @@ export const useRegister = () => {
     loading,
     handleChange,
     handleSubmit,
+    emailError
   };
 };
