@@ -101,6 +101,10 @@ Se você executou com sucesso os comandos da sessão anterior então pode testar
 | **Usuário Comum** | `joao@email.com` | `user123` |
 | **Usuário Comum** | `maria@email.com` | `user123` |
 
+# Lista de Endpoints
+Os endpoints implementados no projeto foram os que o enunciado do teste sugeriu e podem ser acessados em http://localhost:8000/api/docs.
+Para a documentação da API foi usado Swagger.
+
 # Decisões técnicas
 Esta seção detalha as escolhas feitas durante o desenvolvimento e como a integridade do sistema foi garantida.
 
