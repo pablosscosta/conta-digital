@@ -153,7 +153,24 @@ function Dashboard() {
                 </div>
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Valor (R$)</label>
-                  <input style={styles.input} type="number" step="0.01" min="1.00" value={transferData.value} onChange={(e) => setTransferData({...transferData, value: e.target.value})} required />
+                  <input
+                    style={{
+                      ...styles.input,
+                      borderColor: Number(transferData.value) > Number(balance) ? "#ef4444" : "#d1d5db"
+                    }}
+                    type="number"
+                    step="0.01"
+                    min="1.00"
+                    placeholder="0,00"
+                    value={transferData.value}
+                    onChange={(e) => setTransferData({...transferData, value: e.target.value})}
+                    required
+                  />
+                  {Number(transferData.value) > Number(balance) && (
+                    <small style={{ color: "#ef4444", marginTop: "4px", fontWeight: "600" }}>
+                      Saldo insuficiente. Disponível: R$ {Number(balance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </small>
+                  )}
                 </div>
                 <div style={styles.inputGroup}>
                   <label style={styles.label}>Descrição</label>
@@ -161,8 +178,24 @@ function Dashboard() {
                 </div>
               </div>
               <div style={styles.modalActions}>
-                <button type="button" style={styles.cancelBtn} onClick={() => setIsTransferModalOpen(false)}>Cancelar</button>
-                <button type="submit" style={styles.confirmBtn} disabled={Number(transferData.value) > Number(balance)}>Confirmar Envio</button>
+                <button type="button" style={styles.cancelBtn} onClick={() => setIsTransferModalOpen(false)}>
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  style={{
+                    ...styles.confirmBtn,
+                    backgroundColor: (loading || Number(transferData.value) > Number(balance) || !transferData.value) 
+                      ? "#94a3b8" 
+                      : "#2563eb",
+                    cursor: (loading || Number(transferData.value) > Number(balance) || !transferData.value) 
+                      ? "not-allowed" 
+                      : "pointer"
+                  }} 
+                  disabled={loading || Number(transferData.value) > Number(balance) || !transferData.value}
+                >
+                  {loading ? "Enviando..." : "Confirmar Envio"}
+                </button>
               </div>
             </form>
           </div>

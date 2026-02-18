@@ -78,4 +78,18 @@ export const styles = {
     border: "1px solid #fee2e2",
     wordBreak: "break-all", // Para não quebrar o layout se o erro for um JSON longo
   },
+  footer: {
+    marginTop: "24px",
+    textAlign: "center",
+    fontSize: "14px",
+  },
+  footerText: {
+    color: "#6b7280",
+  },
+  link: {
+    color: "#2563eb",
+    fontWeight: "600",
+    textDecoration: "none",
+  },
+
 };

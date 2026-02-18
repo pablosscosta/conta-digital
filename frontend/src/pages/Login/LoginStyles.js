@@ -78,4 +78,19 @@ export const styles = {
     marginBottom: "20px",
     border: "1px solid #fee2e2",
   },
+  footer: {
+    marginTop: "24px",
+    textAlign: "center",
+    fontSize: "14px",
+  },
+  footerText: {
+    color: "#6b7280", 
+  },
+  link: {
+    color: "#2563eb", 
+    fontWeight: "600",
+    textDecoration: "none",
+    transition: "color 0.2s",
+  },
+
 };
