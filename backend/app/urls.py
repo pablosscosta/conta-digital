@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from .views import UserRegistrationView, BalanceAPIView, AdminUsersAPIView, DepositView, TransferView, StatementView, AdminStatementView, ReverseTransferView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -8,14 +8,14 @@ from drf_spectacular.utils import extend_schema_view, extend_schema
 urlpatterns = [
     # Autenticação
     path('auth/register/', UserRegistrationView.as_view(), name='user_registration'),
-    path('api/auth/login/', extend_schema_view(
+    path('auth/login/', extend_schema_view(
         post=extend_schema(
             tags=['Autenticação'], 
             summary="Login e obtencao de token",
             description="Autentica o usuario e retorna os tokens access e refresh."
         )
     )(TokenObtainPairView.as_view()), name='token_obtain_pair'),
-    path('api/auth/refresh/', extend_schema_view(
+    path('auth/refresh/', extend_schema_view(
         post=extend_schema(exclude=True)
     )(TokenRefreshView.as_view()), name='token_refresh'),
 
