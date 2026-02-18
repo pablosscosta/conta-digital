@@ -39,11 +39,15 @@ cd backend
 #### 1.2 Crie e ative um ambiente virtual
 - Linux:
 ```
-python3 -m venv venv && source venv/bin/activate
+python3 -m venv venv
+
+source venv/bin/activate
 ```
 - Windows:
 ```
-python -m venv venv && .\venv\Scripts\activate
+python -m venv venv
+
+.\venv\Scripts\activate
 ```
 
 #### 1.3 Instale as dependências:
