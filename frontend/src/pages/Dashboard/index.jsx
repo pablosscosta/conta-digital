@@ -298,6 +298,7 @@ function Dashboard() {
                     <tr>
                       <th style={styles.th}>Nome</th>
                       <th style={styles.th}>E-mail</th>
+                      <th style={styles.th}>CPF</th>
                       <th style={styles.th}>Saldo</th>
                       <th style={styles.th}>Ações</th>
                     </tr>
@@ -307,6 +308,7 @@ function Dashboard() {
                       <tr key={item.id} style={styles.tableRow}>
                         <td style={styles.td}><strong>{item.user.full_name}</strong></td>
                         <td style={styles.td}>{item.user.email}</td>
+                        <td style={styles.td}>{item.user.cpf}</td> 
                         <td style={{...styles.td, fontWeight: 'bold', color: '#2563eb'}}>
                           R$ {Number(item.balance).toFixed(2)}
                         </td>
