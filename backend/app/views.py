@@ -8,8 +8,17 @@ from .serializers import UserSerializer, AccountSerializer, DepositSerializer, T
 from .models import Account, Transaction
 from .services import DepositService, TransferService, ReverseService
 from rest_framework.exceptions import ValidationError
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
+
+@extend_schema(
+    tags=['Autenticação'],
+    summary="Cadastro de usuario",
+    description="Cria um novo usuario no sistema solicitando nome, CPF, e-mail, senha e tipo de perfil (user ou admin). Acesso publico."
+)
 class UserRegistrationView(APIView):
+    serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -23,7 +32,13 @@ class UserRegistrationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    tags=['Conta e Saldo'],
+    summary="Consultar saldo do usuario logado",
+    description="Retorna os dados da conta e o saldo atual do usuario autenticado."
+)
 class BalanceAPIView(APIView):
+    serializer_class = AccountSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -35,8 +50,13 @@ class BalanceAPIView(APIView):
             return Response({"detail": "Conta não encontrada."}, status=status.HTTP_404_NOT_FOUND)
 
 
-
+@extend_schema(
+    tags=['Conta e Saldo'],
+    summary="Listar todos os usuarios e saldos",
+    description="Rota exclusiva para administradores. Lista todas as contas de usuarios do tipo 'user'."
+)
 class AdminUsersAPIView(APIView):
+    serializer_class = AccountSerializer
     permission_classes = [IsAuthenticated, IsAdminRole]
 
     def get(self, request):
@@ -45,7 +65,13 @@ class AdminUsersAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Operações Financeiras'],
+    summary="Depositar valor na propria conta",
+    description="Permite que o usuario logado realize um deposito em sua propria conta informando o valor."
+)
 class DepositView(APIView):
+    serializer_class = DepositSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -73,7 +99,14 @@ class DepositView(APIView):
             status=status.HTTP_201_CREATED
         )
 
+
+@extend_schema(
+    tags=['Operações Financeiras'],
+    summary="Transferir valor para outro usuario",
+    description="Realiza a transferencia de valores entre contas. O destinatario pode ser identificado por E-mail ou CPF."
+)
 class TransferView(APIView):
+    serializer_class = TransferSerializer 
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -117,7 +150,18 @@ class TransferView(APIView):
         )
 
 
+@extend_schema(
+    tags=['Extrato'],
+    summary="Extrato do usuario logado",
+    description="Retorna o historico de transacoes do usuario autenticado. Permite filtros por data inicial, final e tipo de transacao.",
+    parameters=[
+        OpenApiParameter(name='date_start', description='Data inicial (YYYY-MM-DD)', required=False, type=str),
+        OpenApiParameter(name='date_end', description='Data final (YYYY-MM-DD)', required=False, type=str),
+        OpenApiParameter(name='type', description='Tipo de transacao (deposito, recebimento, envio, estorno)', required=False, type=str),
+    ]
+)
 class StatementView(APIView):
+    serializer_class = TransactionStatementSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -142,8 +186,19 @@ class StatementView(APIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+# Extrato de Terceiros (Admin)
+@extend_schema(
+    tags=['Extrato'],
+    summary="Extrato de qualquer usuario",
+    description="Rota exclusiva para administradores. Retorna o historico de transacoes de um usuario especifico atraves do ID do usuario.",
+    parameters=[
+        OpenApiParameter(name='date_start', description='Data inicial (YYYY-MM-DD)', required=False, type=str),
+        OpenApiParameter(name='date_end', description='Data final (YYYY-MM-DD)', required=False, type=str),
+        OpenApiParameter(name='type', description='Tipo de transacao', required=False, type=str),
+    ]
+)
 class AdminStatementView(APIView):
+    serializer_class = TransactionStatementSerializer
     permission_classes = [IsAuthenticated, IsAdminRole]
 
     def get(self, request, id):
@@ -174,6 +229,13 @@ class AdminStatementView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=['Operações Financeiras'],
+    summary="Estornar uma transferencia especifica",
+    description="Rota exclusiva para administradores. Realiza o estorno de uma transacao de envio atraves do ID da transacao.",
+    request=None,
+    responses={201: OpenApiTypes.OBJECT}
+)
 class ReverseTransferView(APIView):
     permission_classes = [IsAuthenticated, IsAdminRole]
 

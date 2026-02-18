@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'app.apps.AppConfig',
     'rest_framework',
+    'drf_spectacular',
 ]
 
 REST_FRAMEWORK = {
@@ -37,8 +38,24 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API da aplicação Conta Digital',
+    'DESCRIPTION': 'Documentação das rotas de autenticação, conta/saldo, operações financeiras e extrato.',
+    'VERSION': '1.0.0',
+    'TAGS': [
+        {'name': 'Autenticação'},
+        {'name': 'Conta e Saldo'},
+        {'name': 'Operações Financeiras'},
+        {'name': 'Extrato'},
+    ],
+    'SERVE_INCLUDE_SCHEMA': False,
+    'POSTPROCESSING_HOOKS': [
+        'drf_spectacular.hooks.postprocess_schema_enums'
+    ],
+}
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
