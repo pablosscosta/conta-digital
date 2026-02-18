@@ -91,59 +91,57 @@ class DepositService:
 class ReverseService:
 
     @staticmethod
-    @transaction.atomic
     def execute_reverse(transaction_id):
+        with transaction.atomic():
+            original_transaction = Transaction.objects.select_related(
+                "account", "destination_account"
+            ).get(id=transaction_id)
 
-           original_transaction = Transaction.objects.select_related(
-               "account"
-           ).get(id=transaction_id)
+            if original_transaction.type != Transaction.Type.ENVIO:
+                raise ValidationError("Apenas transferências do tipo 'Envio' podem ser estornadas.")
 
-           if original_transaction.type != Transaction.Type.ENVIO:
-               raise ValidationError("Apenas transferências do tipo 'Envio' podem ser estornadas.")
+            if Transaction.objects.filter(
+                related_transaction=original_transaction,
+                type=Transaction.Type.ESTORNO
+            ).exists():
+                raise ValidationError("Transferência já estornada.")
 
-           if Transaction.objects.filter(
-               related_transaction=original_transaction,
-               type=Transaction.Type.ESTORNO
-           ).exists():
-               raise ValidationError("Transferência já estornada.")
+            sender_account = original_transaction.account
+            receiver_account = original_transaction.destination_account
 
-           sender_account = original_transaction.account
+            ids = sorted([sender_account.id, receiver_account.id])
+            accounts_queryset = Account.objects.select_for_update().filter(id__in=ids)
 
-           received_transaction = Transaction.objects.get(
-               related_transaction=original_transaction,
-               type=Transaction.Type.RECEBIMENTO
-           )
+            sender = accounts_queryset.get(id=sender_account.id)
+            receiver = accounts_queryset.get(id=receiver_account.id)
 
-           receiver_account = received_transaction.account
+            value = original_transaction.value
 
-           value = original_transaction.value
+            if receiver.balance < value:
+                raise ValidationError("Destinatário não possui saldo suficiente para o estorno.")
 
-           if receiver_account.balance < value:
-               raise ValidationError("Destinatário não possui saldo para estorno.")
+            receiver.balance -= value
+            sender.balance += value
 
-           receiver_account.balance -= value
-           sender_account.balance += value
+            receiver.save()
+            sender.save()
 
-           receiver_account.save()
-           sender_account.save()
+            reverse_sender = Transaction.objects.create(
+                account=sender,
+                type=Transaction.Type.ESTORNO,
+                value=value,
+                description=f"Estorno recebido: {original_transaction.id}",
+                balance_after=sender.balance,
+                related_transaction=original_transaction
+            )
 
+            reverse_receiver = Transaction.objects.create(
+                account=receiver,
+                type=Transaction.Type.ESTORNO,
+                value=value,
+                description=f"Estorno enviado: {original_transaction.id}",
+                balance_after=receiver.balance,
+                related_transaction=original_transaction
+            )
 
-           reverse_sender = Transaction.objects.create(
-               account=sender_account,
-               type=Transaction.Type.ESTORNO,
-               value=value,
-               description="Estorno de transferência enviado",
-               balance_after=sender_account.balance,
-               related_transaction=original_transaction
-           )
-
-           reverse_receiver = Transaction.objects.create(
-               account=receiver_account,
-               type=Transaction.Type.ESTORNO,
-               value=value,
-               description="Estorno de transferência recebido",
-               balance_after=receiver_account.balance,
-               related_transaction=original_transaction
-           )
-
-           return reverse_sender, reverse_receiver
+            return reverse_sender, reverse_receiver
