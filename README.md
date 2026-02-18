@@ -119,3 +119,10 @@ O maior desafio técnico foi garantir que o saldo dos usuários fosse manipulado
 
 ### 3. Estratégia de Banco de Dados
 - **SQLite3:** Optei pelo SQLite por já vir integrado ao Django. Para o estágio atual de desenvolvimento e para facilitar a avaliação do projeto (sem exigir configurações complexas de ambiente), ele é perfeitamente funcional e suficiente.
+
+# Melhorias
+- Migrar para um DB mais robusto (Postgresql)
+- Desenvolver suites de testes automatizados (PyTest)
+- Funcionalidade de alternar status da conta entre: ativo, inativo e bloqueado(disponível apenas para Admin)
+- Remover a opção de cadastro de admin via página pública. Apenas Admin pode cadastrar um outro Admin.
+- Containerização da stack com Docker
