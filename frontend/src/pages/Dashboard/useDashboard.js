@@ -100,11 +100,23 @@ export const useDashboard = () => {
       setTransferData({ identifier: "", value: "", description: "" });
       fetchData();
     } catch (err) {
-      const errorMsg = err.response?.data?.non_field_errors || "Erro na transferência.";
-      alert(Array.isArray(errorMsg) ? errorMsg[0] : errorMsg);
+      const data = err.response?.data;
+      let errorMsg = "Erro na transferência.";
+
+      if (data) {
+        const values = Object.values(data);
+        if (values.length > 0) {
+          errorMsg = values[0];
+        }
+      }
+      const mensagemFinal = `${errorMsg} Não foi possível completar a transferência. Verifique os dados e tente novamente.`;
+      alert(mensagemFinal);
+
     } finally {
       setLoading(false);
     }
+
+
   };
 
   const getBadgeStyle = (type) => {
