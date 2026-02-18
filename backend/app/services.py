@@ -92,30 +92,32 @@ class ReverseService:
 
     @staticmethod
     def execute_reverse(transaction_id):
+        original_transaction = Transaction.objects.select_related(
+            "account", "destination_account"
+        ).filter(id=transaction_id).first()
+
+        if not original_transaction:
+            raise ValidationError("Transação não encontrada.")
+
+        if original_transaction.type != Transaction.Type.ENVIO:
+            raise ValidationError("Apenas transferências do tipo 'Envio' podem ser estornadas.")
+
+        if Transaction.objects.filter(
+            related_transaction=original_transaction,
+            type=Transaction.Type.ESTORNO
+        ).exists():
+            raise ValidationError("Transferência já estornada.")
+
+        sender_account = original_transaction.account
+        receiver_account = original_transaction.destination_account
+        value = original_transaction.value
+
         with transaction.atomic():
-            original_transaction = Transaction.objects.select_related(
-                "account", "destination_account"
-            ).get(id=transaction_id)
-
-            if original_transaction.type != Transaction.Type.ENVIO:
-                raise ValidationError("Apenas transferências do tipo 'Envio' podem ser estornadas.")
-
-            if Transaction.objects.filter(
-                related_transaction=original_transaction,
-                type=Transaction.Type.ESTORNO
-            ).exists():
-                raise ValidationError("Transferência já estornada.")
-
-            sender_account = original_transaction.account
-            receiver_account = original_transaction.destination_account
-
             ids = sorted([sender_account.id, receiver_account.id])
             accounts_queryset = Account.objects.select_for_update().filter(id__in=ids)
 
             sender = accounts_queryset.get(id=sender_account.id)
             receiver = accounts_queryset.get(id=receiver_account.id)
-
-            value = original_transaction.value
 
             if receiver.balance < value:
                 raise ValidationError("Destinatário não possui saldo suficiente para o estorno.")
